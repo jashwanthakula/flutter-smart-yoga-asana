@@ -52,22 +52,27 @@ def index():
 @app.route('/api/quotes', methods=['GET'])
 def get_quotes():
     """
-    Return 3 random yoga quotes from MongoDB as JSON for the Flutter app.
+    Return 1 random yoga quote from MongoDB as JSON for the Flutter app.
     """
     try:
-        # ✅ Fetch the quotes document from MongoDB
-        quotes_document = quotes_collection.find_one({}, {'_id': 0})  # Exclude the _id field
-
-        # ✅ Randomly select 3 quotes
+        quotes_document = quotes_collection.find_one({}, {'_id': 0})
         if quotes_document and 'quotes' in quotes_document:
             all_quotes = quotes_document['quotes']
-            random_quotes = random.sample(all_quotes, min(3, len(all_quotes)))  # Select up to 3 quotes
-            return jsonify({"success": True, "quotes": random_quotes})
+            if not all_quotes:
+                return jsonify({"success": False, "message": "No quotes available"})
+            random_quote = random.choice(all_quotes)  # Pick 1 random quote
+            # Split quote into text and author
+            parts = random_quote.split(' - ')
+            quote_data = {
+                "text": parts[0].strip('"'),  # Remove quotes around text
+                "author": parts[1] if len(parts) > 1 else "Unknown"
+            }
+            return jsonify(quote_data)
         else:
-            return jsonify({"success": False, "quotes": ["No quotes available."] * 3})
+            return jsonify({"success": False, "message": "No quotes available"})
     except Exception as e:
-        print(f"❌ Error fetching quotes: {e}")
-        return jsonify({"success": False, "quotes": ["Error loading quotes."] * 3})
+        print(f"❌ Error fetching quote: {e}")
+        return jsonify({"success": False, "message": "Error loading quote"})
 
 @app.route('/recommend')
 def recommend():
